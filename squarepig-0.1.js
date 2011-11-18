@@ -105,8 +105,6 @@ pig.Object = function() {
 		}
 		return o ;
 	} ;
-
-	this.init = function() {} ;
 }
 
 pig.World = function() {
@@ -117,10 +115,6 @@ pig.World = function() {
 
 	this.add = function(e) {
 		this.entities.push(e) ;
-	} ;
-
-	this.init = function() {
-
 	} ;
 
 	this.draw = function() {
@@ -193,11 +187,13 @@ pig.Entity = function() {
 			this.graphic.draw() ;
 	} ;
 
+	this.mouseDown = function() {} ;
+
 	this.keyDown = function(key) {} ;
 
 	this.keyUp = function(key) {} ;
 
-	this.update = function() {} ;
+	this.update = function(dtime) {} ;
 }
 
 pig.Rect = function(x, y, w, h) {
@@ -207,7 +203,16 @@ pig.Rect = function(x, y, w, h) {
 	this.w = w ;
 	this.h = h ;
 
-	this.collide = function(rect) {
+	this.collidePoint = function(point) {
+		return (
+			point[0] >= this.x &&
+			point[0] <  this.x + this.w &&
+			point[1] >= this.y &&
+			point[1] <  this.y + this.h
+		) ;
+	} ;
+
+	this.collideRect = function(rect) {
 		if(this.x > rect.x + rect.w)
 			return false ;
 		if(rect.x > this.x + this.w)
@@ -228,13 +233,11 @@ pig.Rect = function(x, y, w, h) {
 pig.Circle = function(x, y, radius) {
 	pig.Object.apply(this) ;
 
-	this.init = function(x, y, radius) {
-		this.x = x ;
-		this.y = y ;
-		this.radius = radius ;
-	} ;
+	this.x = x ;
+	this.y = y ;
+	this.radius = radius ;
 
-	this.collide = function(circle) {
+	this.collideCircle = function(circle) {
 		var dx = this.x - circle.x ;
 		var dy = this.y - circle.y ;
 		var sqDistance = dx*dx + dy*dy ;
@@ -244,10 +247,38 @@ pig.Circle = function(x, y, radius) {
 		return collide ;
 	} ;
 
+	this.collidePoint = function(point) {
+		var d = [point.x - this.x, point.y - this.y] ;
+		return (d[0]*d[0] + d[1]*d[1] <= this.radius*this.radius) ;
+	} ;
+
 	this.place = function(pos) {
 		this.x = pos[0] ;
 		this.y = pos[1] ;
 	} ;
+} ;
+
+pig.CanvasGraphic = function(x, y, w, h) {
+	pig.Object.apply(this) ;
+
+	this.x = x ;
+	this.y = y ;
+	this.w = w ;
+	this.h = h  ;
+
+	this.canvas = document.createElement('canvas') ;
+	this.canvas.width = w ;
+	this.canvas.height = h ;
+	this.context = this.canvas.getContext('2d') ;
+
+	this.draw = function() {
+		pig.context.save() ;
+		pig.context.translate(this.x, this.y) ;
+		pig.context.drawImage(this.canvas, 0, 0) ;
+		pig.context.restore() ;
+	};
+
+	this.update = function() {}
 } ;
 
 pig.Sprite = function(x, y, image, frameW, frameH) {
