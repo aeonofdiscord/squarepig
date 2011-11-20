@@ -123,13 +123,18 @@ pig.World = function() {
 		}
 	} ;
 
-	this.getType = function(type) {
-		var ents = [] ;
+	this.filter = function(f) {
+		l = [] ;
 		for(var e in this.entities) {
-			if(this.entities[e].type == type)
-				ents.push(this.entities[e]) ;
+			if(f(this.entities[e])) {
+				l.push(this.entities[e]) ;
+			}
 		}
-		return ents ;
+		return l ;
+	} ;
+
+	this.getType = function(type) {
+		return this.filter(function(e) { return e.type == type ; }) ;
 	} ;
 
 	this.keyDown = function(key) {
@@ -248,7 +253,7 @@ pig.Circle = function(x, y, radius) {
 	} ;
 
 	this.collidePoint = function(point) {
-		var d = [point.x - this.x, point.y - this.y] ;
+		var d = [point[0] - this.x, point[1] - this.y] ;
 		return (d[0]*d[0] + d[1]*d[1] <= this.radius*this.radius) ;
 	} ;
 
