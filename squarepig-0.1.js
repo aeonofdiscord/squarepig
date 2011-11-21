@@ -2,6 +2,7 @@ pig = {
 	canvas: null,
 	context: null,
 	images: {},
+	audio: {},
 	world: null,
 	mouse: {x: undefined, y: undefined, pressed: false},
 	offset: [0, 0],
@@ -36,6 +37,15 @@ pig.loadImage = function(url) {
 	i.src = url ;
 	this.images[url] = i ;
 	return i ;
+} ;
+
+pig.loadAudio = function(url) {
+	//if(url in this.audio)
+	//	return this.audio[url] ;
+	var a = new Audio() ;
+	a.src = url ;
+	this.audio[url] = a ;
+	return a ;
 } ;
 
 pig._mousePosition = function(e) {
@@ -263,7 +273,7 @@ pig.Circle = function(x, y, radius) {
 	} ;
 } ;
 
-pig.CanvasGraphic = function(x, y, w, h) {
+pig.Canvas = function(x, y, w, h) {
 	pig.Object.apply(this) ;
 
 	this.x = x ;
@@ -283,8 +293,38 @@ pig.CanvasGraphic = function(x, y, w, h) {
 		pig.context.restore() ;
 	};
 
-	this.update = function() {}
+	this.update = function(dtime) {}
 } ;
+
+pig.Image = function(x, y, image) {
+	pig.Object.apply(this) ;
+
+	this.x = x ;
+	this.y = y ;
+
+	if(!image)
+		throw 'Image not specified.' ;
+
+	this.image = pig.loadImage(image) ;
+
+	this.draw = function() {
+		if(!this.image.complete) return ;
+
+		pig.context.save() ;
+		pig.context.translate(this.x, this.y) ;
+		pig.context.drawImage(this.image, 0, 0) ;
+		pig.context.restore() ;
+	};
+
+	this.update = function(dtime) {}
+} ;
+
+pig.Sfx = function(sound) {
+	this.play = function() {
+		this.sound = pig.loadAudio(sound) ;
+		this.sound.play() ;
+	}
+};
 
 pig.Sprite = function(x, y, image, frameW, frameH) {
 	pig.Object.apply(this) ;
