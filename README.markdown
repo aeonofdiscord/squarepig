@@ -5,3 +5,5 @@ Squarepig is intended as to be simple and straightforward; as comfortable for no
 Right now, Squarepig consists of one file: squarepig-0.1.js (or it's minifed sibling, squarepig-0.1.min.js). That's all you need! You can see a very basic demo working here: http://aeonofdiscord.com/squarepig
 
 Squarepig is distributed under the zlib license (http://en.wikipedia.org/wiki/Zlib_License), so you can use it however you feel like.
+
+*That'll do, pig.*
