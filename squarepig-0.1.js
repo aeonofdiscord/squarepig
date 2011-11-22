@@ -211,6 +211,12 @@ pig.Entity = function() {
 	this.update = function(dtime) {} ;
 }
 
+pig.Graphic = function() {
+	this.draw = function() {}
+
+	this.update = function(dtime) {}
+} ;
+
 pig.Rect = function(x, y, w, h) {
 	pig.Object.apply(this) ;
 	this.x = x ;
@@ -273,8 +279,26 @@ pig.Circle = function(x, y, radius) {
 	} ;
 } ;
 
+pig.Graphiclist = function(graphics) {
+	pig.Graphic.apply(this) ;
+
+	this.graphics = graphics || [] ;
+
+	this.draw = function() {
+		for(var g in this.graphics) {
+			this.graphics[g].draw() ;
+		}
+	} ;
+
+	this.update = function(dtime) {
+		for(var g in this.graphics) {
+			this.graphics[g].update(dtime) ;
+		}
+	} ;
+} ;
+
 pig.Canvas = function(x, y, w, h) {
-	pig.Object.apply(this) ;
+	pig.Graphic.apply(this) ;
 
 	this.x = x ;
 	this.y = y ;
@@ -297,7 +321,7 @@ pig.Canvas = function(x, y, w, h) {
 } ;
 
 pig.Image = function(x, y, image) {
-	pig.Object.apply(this) ;
+	pig.Graphic.apply(this) ;
 
 	this.x = x ;
 	this.y = y ;
@@ -316,18 +340,15 @@ pig.Image = function(x, y, image) {
 		pig.context.restore() ;
 	};
 
-	this.update = function(dtime) {}
+	this.update = function(dtime) {
+		this.width = this.image.width ;
+		this.height = this.image.height ;
+	}
 } ;
 
-pig.Sfx = function(sound) {
-	this.play = function() {
-		this.sound = pig.loadAudio(sound) ;
-		this.sound.play() ;
-	}
-};
 
 pig.Sprite = function(x, y, image, frameW, frameH) {
-	pig.Object.apply(this) ;
+	pig.Graphic.apply(this) ;
 
 	this.x = x ;
 	this.y = y ;
@@ -394,6 +415,30 @@ pig.Sprite = function(x, y, image, frameW, frameH) {
 	} ;
 } ;
 
+pig.Text = function(x, y, text) {
+	pig.Graphic.apply(this) ;
+	this.x = x ;
+	this.y = y ;
+	this.text = text ;
+	this.font = "sans" ;
+	this.size = "10pt" ;
+
+	this.draw = function() {
+		pig.context.textBaseline = 'top' ;
+		pig.context.font = this.size + " " + this.font ;
+		pig.context.fillText(this.text, this.x, this.y) ;
+	};
+} ;
+
+pig.Sfx = function(sound) {
+	pig.Object.apply(this) ;
+
+	this.play = function() {
+		this.sound = pig.loadAudio(sound) ;
+		this.sound.play() ;
+	}
+};
+
 pig.key = {
 	A: 65,
 	B: 66,
@@ -438,3 +483,4 @@ pig.key = {
 	RIGHT: 39,
 	DOWN: 40
 };
+pig.version = 0.1 ;

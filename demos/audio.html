@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>squarepig demo - Audio</title>
+
+		<script>
+			function EffectButton(x, y, image, sound) {
+				pig.Entity.apply(this) ;
+
+				this.x = x ;
+				this.y = y ;
+				this.image = new pig.Image(x, y, image) ;
+				this.graphic = this.image ;
+				this.sound = new pig.Sfx(sound) ;
+				this.rect = new pig.Rect(x, y, 1, 1) ;
+
+				this.mouseDown = function() {
+					if(this.rect.collidePoint([pig.mouse.x, pig.mouse.y])) {
+						this.sound.play() ;
+					}
+				}
+
+				this.update = function(dtime) {
+					this.rect.w = this.image.width ;
+					this.rect.h = this.image.height ;
+				} ;
+			}
+
+			function main() {
+				pig.init(document.getElementById('pig-canvas')) ;
+				pig.world.add(new EffectButton(0, 0, "graphics/audio_test.png", "audio/bell.ogg")) ;
+				pig.run() ;
+			}
+		</script>
+	</head>
+	<body onload = "main();">
+		<canvas id = "pig-canvas" style = "width: 512px; height: 512px">
+			<p>Hang on! Your browser doesn't support the &lt;canvas&gt; tag! You should get on that.</p>
+		</canvas>
+
+		<p>Made with <a href = "https://github.com/aeonofdiscord/squarepig">squarepig</a>.</p>
+		<script type = "text/javascript" src = "../squarepig-0.1.js"></script>
+	</body>
+</html>

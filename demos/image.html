@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>squarepig demo - Image loading</title>
+
+		<script>
+			function TestImage(x, y, image) {
+				pig.Entity.apply(this) ;
+
+				this.x = x ;
+				this.y = y ;
+				this.image = new pig.Image(x, y, image) ;
+				this.graphic = this.image ;
+			}
+
+			function main() {
+				pig.init(document.getElementById('pig-canvas')) ;
+				pig.world.add(new TestImage(0, 0, "graphics/test_image.png")) ;
+				pig.run() ;
+			}
+		</script>
+	</head>
+	<body onload = "main();">
+		<canvas id = "pig-canvas" style = "width: 512px; height: 512px">
+			<p>Hang on! Your browser doesn't support the &lt;canvas&gt; tag! You should get on that.</p>
+		</canvas>
+
+		<p>Made with <a href = "https://github.com/aeonofdiscord/squarepig">squarepig</a>.</p>
+		<script type = "text/javascript" src = "../squarepig-0.1.js"></script>
+	</body>
+</html>

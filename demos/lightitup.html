@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>squarepig demo - Light It Up</title>
+
+		<script>
+			function Light(gx, gy, radius, board) {
+				pig.Entity.apply(this) ;
+
+				this.gx = gx ;
+				this.gy = gy ;
+				var x = gx * (radius*2 + 1) ;
+				var y = gy * (radius*2 + 1) ;
+				this.radius = radius ;
+
+				this.lit = true ;
+				this.board = board ;
+
+				this.circle = new pig.Circle(x+radius, y+radius, radius) ;
+				this.dark = new pig.Canvas(x, y, radius*2, radius*2) ;
+
+				this.dark.context.beginPath() ;
+				this.dark.context.fillStyle = '#400' ;
+				this.dark.context.arc(radius, radius, this.radius, 0, 360) ;
+				this.dark.context.fill() ;
+
+				this.light = new pig.Canvas(x, y, radius*2, radius*2) ;
+
+				this.light.context.beginPath() ;
+				this.light.context.fillStyle = '#f00' ;
+				this.light.context.arc(radius, radius, this.radius, 0, 360) ;
+				this.light.context.fill() ;
+
+				this.graphic = this.dark ;
+
+				this.flip = function() {
+					this.lit = !this.lit ;
+				};
+
+				this.mouseDown = function() {
+					if(this.circle.collidePoint([pig.mouse.x, pig.mouse.y]))
+						this.board.light(this.gx, this.gy) ;
+				} ;
+
+				this.update = function(dtime) {
+					if(this.lit)
+						this.graphic = this.light ;
+					else
+						this.graphic = this.dark ;
+				} ;
+			}
+
+			function Board() {
+				pig.Entity.apply(this) ;
+
+				this.lights = [] ;
+				for(var y = 0; y < 5; ++y)	{
+					for(var x = 0; x < 5; ++x) {
+						var l = (new Light(x, y, 32, this)) ;
+						this.lights.push(l) ;
+						pig.world.add(l) ;
+					}
+				}
+
+				this.light = function(gx, gy) {
+					this.lights[gy*5+gx].flip() ;
+					if(gx < 4)
+						this.lights[gy*5+gx+1].flip() ;
+					if(gy < 4)
+						this.lights[(gy+1)*5+gx].flip() ;
+					if(gx > 0)
+						this.lights[gy*5+gx-1].flip() ;
+					if(gy > 0)
+						this.lights[(gy-1)*5+gx].flip() ;
+
+
+					this.checkWon() ;
+				} ;
+
+				this.checkWon = function() {
+					for(var l in this.lights) {
+						if(!this.lights[l].lit)
+							return ;
+					} ;
+
+					new pig.Sfx("audio/bell.ogg").play() ;
+					alert("Victory!") ;
+				};
+
+				for(var i = 0; i < 8; ++i) {
+					this.light(Math.floor(Math.random()*5), Math.floor(Math.random()*5)) ;
+				}
+			}
+
+			function main() {
+				pig.init(document.getElementById('pig-canvas')) ;
+				pig.world.add(new Board()) ;
+				pig.run() ;
+			}
+		</script>
+	</head>
+	<body onload = "main();">
+		<canvas id = "pig-canvas" style = "width: 328px; height: 328px">
+			<p>Hang on! Your browser doesn't support the &lt;canvas&gt; tag! You should get on that.</p>
+		</canvas>
+
+		<p>Made with <a href = "https://github.com/aeonofdiscord/squarepig">squarepig</a>.</p>
+		<script type = "text/javascript" src = "../squarepig-0.1.js"></script>
+	</body>
+</html>

@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>squarepig - Isometric demo</title>
+	</head>
+	<body onload = "main();">
+		<div style = "width: 800px; margin: auto">
+			<canvas id = "pig-canvas" style = "width: 800px; height: 600px">
+				<p>Hang on! Your browser doesn't support the &lt;canvas&gt; tag! You should get on that.</p>
+			</canvas>
+		</div>
+
+		<p>Made with <a href = "https://github.com/aeonofdiscord/squarepig">squarepig</a>.</p>
+		<script type = "text/javascript" src = "../squarepig-0.1.js"></script>
+		<script type = "text/javascript">
+			TILE_W = 64 ;
+			TILE_H = 32 ;
+
+			function Tilemap(x, y, gw, gh, tw, th, image) {
+				this.x = x ;
+				this.y = y ;
+				this.gridW = gw ;
+				this.gridH = gh ;
+				this.tileW = tw ;
+				this.tileH = th ;
+
+				this.image = pig.loadImage(image) ;
+
+				this.tiles = [] ;
+				for(var y = 0; y < gh; ++y) {
+					for(var x = 0; x < gw; ++x) {
+						this.tiles.push(Math.floor(Math.random() * 2)) ;
+					}
+				}
+
+				this.draw = function() {
+					for(var y = 0; y < this.gridH; ++y) {
+						for(var x = 0; x < this.gridW; ++x) {
+							var tileX = this.tile(x, y) * this.tileW ;
+							var tileY = 0 ;
+
+							var destX = (x-y) * this.tileW/2 + this.x + (this.gridW * this.tileW / 2);
+							var destY = (x+y) * this.tileH/2 + this.y ;
+							pig.context.drawImage(this.image, tileX, tileY, this.tileW, this.tileH, destX, destY, this.tileW, this.tileH) ;
+						}
+					}
+				} ;
+
+				this.tile = function(tx, ty) {
+					if(tx < 0 || ty < 0 || tx >= this.gridW || ty >= this.gridH)
+						return undefined ;
+					return this.tiles[ty * this.gridW + tx] ;
+				} ;
+
+				this.setTile = function(tx, ty, tile) {
+					if(tx < 0 || ty < 0 || tx >= this.gridW || ty >= this.gridH)
+						return ;
+					this.tiles[ty * this.gridW + tx] = tile ;
+				} ;
+
+				this.update = function(dtime){} ;
+			}
+
+			function Terrain() {
+				pig.Entity.apply(this) ;
+
+				var imageUrl = 'graphics/isometric/tiles.png' ;
+				this.graphic = new Tilemap(0, 0, 12, 12, TILE_W, TILE_H, imageUrl) ;
+
+				this.setTile = function(tx, ty, tile) {
+					this.graphic.setTile(tile) ;
+				} ;
+			}
+
+			function City(gx, gy) {
+				pig.Entity.apply(this) ;
+
+				this.gridX = gx ;
+				this.gridY = gy ;
+
+				this.x = (gx - gy) * TILE_W/2 + (12 * TILE_W/2) ;
+				this.y = (gx + gy) * TILE_H/2 - 8 ;
+
+				this.graphic = new pig.Image(this.x, this.y, 'graphics/isometric/city.png') ;
+			}
+
+			function Unit(gx, gy, banner) {
+				pig.Entity.apply(this) ;
+
+				this.gridX = gx ;
+				this.gridY = gy ;
+
+				this.x = (gx - gy) * TILE_W/2 + (12 * TILE_W/2) + 16 ;
+				this.y = (gx + gy) * TILE_H/2 - 32 ;
+
+				this.image = new pig.Image(this.x, this.y, 'graphics/isometric/warchap.png') ;
+				this.banner = new pig.Image(this.x, this.y, 'graphics/isometric/' + banner + '.png') ;
+
+				this.graphic = new pig.Graphiclist([this.banner, this.image]) ;
+			}
+
+			function IsoWorld() {
+				pig.World.apply(this) ;
+				this.terrain = new Terrain() ;
+				this.add(this.terrain) ;
+			}
+
+			function main() {
+				pig.init(document.getElementById('pig-canvas')) ;
+				pig.world = new IsoWorld() ;
+
+				pig.world.terrain.setTile(0, 5, 1) ;
+				pig.world.add(new City(0, 5)) ;
+				pig.world.add(new Unit(0, 5, 'banner_red')) ;
+
+				pig.world.terrain.setTile(11, 6, 1) ;
+				pig.world.add(new City(11, 6)) ;
+				pig.world.add(new Unit(11, 6, 'banner_blue')) ;
+				pig.run() ;
+			}
+		</script>
+	</body>
+</html>
