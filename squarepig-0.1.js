@@ -30,18 +30,22 @@ pig.init = function(canvas) {
 	pig.canvas.height = pig.canvas.clientHeight ;
 } ;
 
+pig.imageError = function(url) {
+	alert("Could not load " + url + ".") ;
+} ;
+
 pig.loadImage = function(url) {
 	if(url in this.images)
 		return this.images[url] ;
 	var i = new Image() ;
 	i.src = url ;
+	i.onload = function() { i.valid = true ; }
+	i.onerror = function() { i.valid = false ; pig.imageError(i.src) ; } ;
 	this.images[url] = i ;
 	return i ;
 } ;
 
 pig.loadAudio = function(url) {
-	//if(url in this.audio)
-	//	return this.audio[url] ;
 	var a = new Audio() ;
 	a.src = url ;
 	this.audio[url] = a ;
@@ -86,18 +90,18 @@ pig.mouseOut = function(event) {
 
 pig.run = function() {
 	var dtime = 1000 / pig.fps ;
-	setInterval(pig.update(dtime / 1000), dtime) ;
+	pig.time = Date.now() ;
+	setInterval(pig.update, dtime) ;
 } ;
 
-pig.update = function(dtime) {
-	var update = function() {
-		pig.world.update(dtime) ;
-		pig.canvas.width = pig.canvas.clientWidth ;
-		pig.canvas.height = pig.canvas.clientHeight ;
-		pig.context.clearRect(0, 0, pig.canvas.width, pig.canvas.height) ;
-		pig.world.draw() ;
-	}
-	return update ;
+pig.update = function() {
+	var dtime = (Date.now() - pig.time) / 1000 ;
+	pig.world.update(dtime) ;
+	pig.canvas.width = pig.canvas.clientWidth ;
+	pig.canvas.height = pig.canvas.clientHeight ;
+	pig.context.clearRect(0, 0, pig.canvas.width, pig.canvas.height) ;
+	pig.world.draw() ;
+	pig.time = Date.now() ;
 } ;
 
 pig.Object = function() {
@@ -128,6 +132,11 @@ pig.World = function() {
 	} ;
 
 	this.draw = function() {
+		this.entities.sort(function(lhs, rhs) {
+			if(!lhs.graphic || !rhs.graphic)
+				return 0 ;
+			return lhs.graphic.z - rhs.graphic.z ;
+		}) ;
 		for(var e in this.entities) {
 			this.entities[e].draw() ;
 		}
@@ -212,6 +221,10 @@ pig.Entity = function() {
 }
 
 pig.Graphic = function() {
+	this.x = 0 ;
+	this.y = 0 ;
+	this.z = 0 ;
+
 	this.draw = function() {}
 
 	this.update = function(dtime) {}
@@ -325,6 +338,7 @@ pig.Image = function(x, y, image) {
 
 	this.x = x ;
 	this.y = y ;
+	this.alpha = 1 ;
 
 	if(!image)
 		throw 'Image not specified.' ;
@@ -332,11 +346,13 @@ pig.Image = function(x, y, image) {
 	this.image = pig.loadImage(image) ;
 
 	this.draw = function() {
-		if(!this.image.complete) return ;
+		if(!this.image.valid) return ;
 
 		pig.context.save() ;
+		pig.context.globalAlpha = this.alpha ;
 		pig.context.translate(this.x, this.y) ;
 		pig.context.drawImage(this.image, 0, 0) ;
+		pig.context.globalAlpha = 1 ;
 		pig.context.restore() ;
 	};
 
@@ -363,14 +379,14 @@ pig.Sprite = function(x, y, image, frameW, frameH) {
 	this.frameWidth = frameW ;
 	this.frameHeight = frameH ;
 	this.flip = false ;
-
+	this.alpha = 1 ;
 
 	this.add = function(animation, frames) {
 		this.animations[animation] = frames ;
 	} ;
 
 	this.draw = function() {
-		if(this.image.height) {
+		if(this.image.valid) {
 			var px = this.x - (this.image.width/2)*(this.scale-1) ;
 			var py = this.y - (this.image.height/2)*(this.scale-1) ;
 
@@ -380,12 +396,14 @@ pig.Sprite = function(x, y, image, frameW, frameH) {
 				fx = frame * this.frameWidth ;
 			}
 			pig.context.save() ;
+			pig.context.globalAlpha = this.alpha ;
 			pig.context.translate(this.x, this.y) ;
 			if(this.flip) {
 				pig.context.scale(-1, 1) ;
 				pig.context.translate(-this.frameWidth, 0) ;
 			}
 			pig.context.drawImage(this.image, fx, 0, this.frameWidth, this.frameHeight, 0, 0, this.frameWidth * this.scale, this.frameHeight * this.scale) ;
+			pig.context.globalAlpha = 1 ;
 			pig.context.restore() ;
 		}
 	} ;
