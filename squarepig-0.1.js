@@ -15,6 +15,7 @@ pig.init = function(canvas) {
 	this.world = new pig.World() ;
 	this.canvas.onmousedown = pig._canvasMouseDown ;
 	document.onkeydown = pig.keyDown ;
+	document.onkeyup = pig.keyUp ;
 	this.canvas.onmousemove = pig.mouseMove ;
 	this.canvas.onmouseout = pig.mouseOut ;
 
@@ -69,8 +70,13 @@ pig._mousePosition = function(e) {
 pig._canvasMouseDown = function(event) {
 	pig.mouseDown() ;
 } ;
+
 pig.keyDown = function(event) {
 	pig.world.keyDown(event.keyCode) ;
+} ;
+
+pig.keyUp = function(event) {
+	pig.world.keyUp(event.keyCode) ;
 } ;
 
 pig.mouseDown = function() {
@@ -129,6 +135,8 @@ pig.World = function() {
 
 	this.add = function(e) {
 		this.entities.push(e) ;
+		e.world = this ;
+		e.added() ;
 	} ;
 
 	this.draw = function() {
@@ -201,6 +209,10 @@ pig.Entity = function() {
 
 	this.graphic = null ;
 	this.type = "entity" ;
+
+	this.world = null ;
+
+	this.added = function() {}
 
 	this.collide = function(rect) {
 		return false ;
@@ -391,9 +403,12 @@ pig.Sprite = function(x, y, image, frameW, frameH) {
 			var py = this.y - (this.image.height/2)*(this.scale-1) ;
 
 			var fx = 0 ;
+			var fy = 0 ;
 			if(this.animation) {
 				var frame = this.animation[this.frame] ;
-				fx = frame * this.frameWidth ;
+				var rowLength = Math.floor(this.image.width / this.frameWidth) ;
+				fx = Math.floor((frame % rowLength) * this.frameWidth) ;
+				fy = Math.floor((frame * rowLength) * this.frameHeight) ;
 			}
 			pig.context.save() ;
 			pig.context.globalAlpha = this.alpha ;
@@ -402,7 +417,7 @@ pig.Sprite = function(x, y, image, frameW, frameH) {
 				pig.context.scale(-1, 1) ;
 				pig.context.translate(-this.frameWidth, 0) ;
 			}
-			pig.context.drawImage(this.image, fx, 0, this.frameWidth, this.frameHeight, 0, 0, this.frameWidth * this.scale, this.frameHeight * this.scale) ;
+			pig.context.drawImage(this.image, fx, fy, this.frameWidth, this.frameHeight, 0, 0, Math.floor(this.frameWidth * this.scale), Math.floor(this.frameHeight * this.scale)) ;
 			pig.context.globalAlpha = 1 ;
 			pig.context.restore() ;
 		}
@@ -416,7 +431,7 @@ pig.Sprite = function(x, y, image, frameW, frameH) {
 	this.play = function(animation, fps) {
 		this.animation = this.animations[animation] ;
 		this.fps = fps ;
-		this.frame = this.animations[animation][0] ;
+		this.frame = 0 ;
 		this.time = 0 ;
 	} ;
 
