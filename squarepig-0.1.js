@@ -29,6 +29,8 @@ pig.init = function(canvas) {
 
 	pig.canvas.width = pig.canvas.clientWidth ;
 	pig.canvas.height = pig.canvas.clientHeight ;
+
+	this.camera = {x:0, y:0} ;
 } ;
 
 pig.imageError = function(url) {
@@ -68,6 +70,7 @@ pig._mousePosition = function(e) {
 } ;
 
 pig._canvasMouseDown = function(event) {
+	event.preventDefault() ;
 	pig.mouseDown() ;
 } ;
 
@@ -313,14 +316,37 @@ pig.Graphiclist = function(graphics) {
 		for(var g in this.graphics) {
 			this.graphics[g].draw() ;
 		}
-	} ;
+	};
+
+	this.pop = function() {
+		this.graphics.pop() ;
+	};
+
+	this.push = function(graphic) {
+		this.graphics.push(graphic) ;
+	};
+
+	this.remove = function(graphic) {
+		for(var g in this.graphics) {
+			if(this.graphics[g] == graphic)
+				this.graphics.slice(g) ;
+		}
+	};
+
+	this.shift = function() {
+		this.graphics.shift() ;
+	};
+
+	this.unshift = function(graphic) {
+		this.graphics.unshift(graphic) ;
+	};
 
 	this.update = function(dtime) {
 		for(var g in this.graphics) {
 			this.graphics[g].update(dtime) ;
 		}
-	} ;
-} ;
+	};
+};
 
 pig.Canvas = function(x, y, w, h) {
 	pig.Graphic.apply(this) ;
@@ -337,7 +363,12 @@ pig.Canvas = function(x, y, w, h) {
 
 	this.draw = function() {
 		pig.context.save() ;
-		pig.context.translate(this.x, this.y) ;
+
+		if(this.ignoreCamera)
+			pig.context.translate(this.x, this.y) ;
+		else
+			pig.context.translate(this.x + pig.camera.x, this.y + pig.camera.y) ;
+
 		pig.context.drawImage(this.canvas, 0, 0) ;
 		pig.context.restore() ;
 	};
@@ -362,7 +393,10 @@ pig.Image = function(x, y, image) {
 
 		pig.context.save() ;
 		pig.context.globalAlpha = this.alpha ;
-		pig.context.translate(this.x, this.y) ;
+		if(this.ignoreCamera)
+			pig.context.translate(this.x, this.y) ;
+		else
+			pig.context.translate(this.x + pig.camera.x, this.y + pig.camera.y) ;
 		pig.context.drawImage(this.image, 0, 0) ;
 		pig.context.globalAlpha = 1 ;
 		pig.context.restore() ;
@@ -373,7 +407,6 @@ pig.Image = function(x, y, image) {
 		this.height = this.image.height ;
 	}
 } ;
-
 
 pig.Sprite = function(x, y, image, frameW, frameH) {
 	pig.Graphic.apply(this) ;
@@ -407,12 +440,17 @@ pig.Sprite = function(x, y, image, frameW, frameH) {
 			if(this.animation) {
 				var frame = this.animation[this.frame] ;
 				var rowLength = Math.floor(this.image.width / this.frameWidth) ;
-				fx = Math.floor((frame % rowLength) * this.frameWidth) ;
-				fy = Math.floor((frame * rowLength) * this.frameHeight) ;
+				fx = (frame % rowLength) * this.frameWidth ;
+				fy = Math.floor(frame / rowLength) * this.frameHeight ;
 			}
 			pig.context.save() ;
 			pig.context.globalAlpha = this.alpha ;
-			pig.context.translate(this.x, this.y) ;
+
+			if(this.ignoreCamera)
+				pig.context.translate(this.x, this.y) ;
+			else
+				pig.context.translate(this.x + pig.camera.x, this.y + pig.camera.y) ;
+
 			if(this.flip) {
 				pig.context.scale(-1, 1) ;
 				pig.context.translate(-this.frameWidth, 0) ;
@@ -440,13 +478,59 @@ pig.Sprite = function(x, y, image, frameW, frameH) {
 
 		if(this.fps > 0 && this.time > 1 / this.fps) {
 			++this.frame ;
-			this.time -= 1 / this.fps ;
+			while(this.time > 1 / this.fps)
+				this.time -= 1 / this.fps ;
 			if(this.frame >= this.animation.length) {
 				this.frame -= this.animation.length ;
 			}
 		}
 	} ;
 } ;
+
+pig.Tilemap = function(x, y, image, tw, th, gw, gh) {
+	pig.Graphic.apply(this) ;
+
+	this.x = x ;
+	this.y = y ;
+	this.gridW = gw ;
+	this.gridH = gh ;
+	this.tileW = tw ;
+	this.tileH = th ;
+
+	this.image = pig.loadImage(image) ;
+
+	this.tiles = [] ;
+	for(var y = 0; y < gh; ++y) {
+		for(var x = 0; x < gw; ++x) {
+			this.tiles.push(0) ;
+		}
+	}
+
+	this.draw = function() {
+		for(var y = 0; y < this.gridH; ++y) {
+			for(var x = 0; x < this.gridW; ++x) {
+				var tileX = this.tile(x, y) * this.tileW ;
+				var tileY = 0 ;
+
+				var destX = x * this.tileW + this.x + pig.camera.x ;
+				var destY = y * this.tileH + this.y + pig.camera.y ;
+				pig.context.drawImage(this.image, tileX, tileY, this.tileW, this.tileH, destX, destY, this.tileW, this.tileH) ;
+			}
+		}
+	} ;
+
+	this.tile = function(tx, ty) {
+		if(tx < 0 || ty < 0 || tx >= this.gridW || ty >= this.gridH)
+			return undefined ;
+		return this.tiles[ty * this.gridW + tx] ;
+	} ;
+
+	this.setTile = function(tx, ty, tile) {
+		if(tx < 0 || ty < 0 || tx >= this.gridW || ty >= this.gridH)
+			return ;
+		this.tiles[ty * this.gridW + tx] = tile ;
+	} ;
+}
 
 pig.Text = function(x, y, text) {
 	pig.Graphic.apply(this) ;
