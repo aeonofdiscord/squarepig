@@ -6,7 +6,7 @@ pig = {
 	world: null,
 	mouse: {x: undefined, y: undefined, pressed: false},
 	offset: [0, 0],
-	fps: 60
+	fps: 60,
 }
 
 pig.init = function(canvas) {
@@ -84,6 +84,7 @@ pig.keyUp = function(event) {
 
 pig.mouseDown = function() {
 	pig.world.mouseDown() ;
+	pig.mouse.pressed = true ;
 } ;
 
 pig.mouseMove = function(event) {
@@ -111,6 +112,7 @@ pig.update = function() {
 	pig.context.clearRect(0, 0, pig.canvas.width, pig.canvas.height) ;
 	pig.world.draw() ;
 	pig.time = Date.now() ;
+	pig.mouse.pressed = false ;
 } ;
 
 pig.Object = function() {
@@ -135,9 +137,11 @@ pig.World = function() {
 
 	this.entities = [] ;
 	this.removed = [] ;
+	this.maxID = 0 ;
 
 	this.add = function(e) {
 		this.entities.push(e) ;
+		e.id = this.maxID++ ;
 		e.world = this ;
 		e.added() ;
 	} ;
@@ -146,6 +150,8 @@ pig.World = function() {
 		this.entities.sort(function(lhs, rhs) {
 			if(!lhs.graphic || !rhs.graphic)
 				return 0 ;
+			if(lhs.graphic.z == rhs.graphic.z)
+				return lhs.id - rhs.id ;
 			return lhs.graphic.z - rhs.graphic.z ;
 		}) ;
 		for(var e in this.entities) {
@@ -168,20 +174,23 @@ pig.World = function() {
 	} ;
 
 	this.keyDown = function(key) {
-		for(var e in this.entities) {
-			this.entities[e].keyDown(key) ;
+		for(var e = this.entities.length-1; e >= 0; --e) {
+			if(this.entities[e].keyDown(key))
+				return ;
 		}
 	} ;
 
 	this.keyUp = function(key) {
-		for(var e in this.entities) {
-			this.entities[e].keyUp(key) ;
+		for(var e = this.entities.length-1; e >= 0; --e) {
+			if(this.entities[e].keyUp(key))
+				return ;
 		}
 	} ;
 
 	this.mouseDown = function() {
-		for(var e in this.entities) {
-			this.entities[e].mouseDown() ;
+		for(var e = this.entities.length-1; e >= 0; --e) {
+			if(this.entities[e].mouseDown())
+				return ;
 		}
 	} ;
 
@@ -376,6 +385,13 @@ pig.Canvas = function(x, y, w, h) {
 	this.update = function(dtime) {}
 } ;
 
+pig.Canvas.createRect = function(x, y, w, h, colour) {
+	var c = new pig.Canvas(x, y, w, h) ;
+	c.context.fillStyle = colour ;
+	c.context.fillRect(0, 0, w, h) ;
+	return c ;
+};
+
 pig.Image = function(x, y, image) {
 	pig.Graphic.apply(this) ;
 
@@ -406,7 +422,7 @@ pig.Image = function(x, y, image) {
 		this.width = this.image.width ;
 		this.height = this.image.height ;
 	}
-} ;
+};
 
 pig.Sprite = function(x, y, image, frameW, frameH) {
 	pig.Graphic.apply(this) ;
@@ -532,17 +548,25 @@ pig.Tilemap = function(x, y, image, tw, th, gw, gh) {
 	} ;
 }
 
-pig.Text = function(x, y, text) {
+pig.Text = function(x, y, text, font, colour, size) {
 	pig.Graphic.apply(this) ;
 	this.x = x ;
 	this.y = y ;
 	this.text = text ;
-	this.font = "sans" ;
-	this.size = "10pt" ;
+	this.font = font || "sans" ;
+	this.colour = colour || "white" ;
+	this.size = size || "10pt" ;
+
+	pig.context.textBaseline = 'top' ;
+	pig.context.font = this.size + " " + this.font ;
+	pig.context.fillStyle = this.colour ;
+	this.width = pig.context.measureText(text).width ;
 
 	this.draw = function() {
+		this.width = pig.context.measureText(this.text) ;
 		pig.context.textBaseline = 'top' ;
 		pig.context.font = this.size + " " + this.font ;
+		pig.context.fillStyle = this.colour ;
 		pig.context.fillText(this.text, this.x, this.y) ;
 	};
 } ;
