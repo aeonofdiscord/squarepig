@@ -364,6 +364,7 @@ pig.Canvas = function(x, y, w, h) {
 	this.y = y ;
 	this.w = w ;
 	this.h = h  ;
+	this.alpha = 1 ;
 
 	this.canvas = document.createElement('canvas') ;
 	this.canvas.width = w ;
@@ -372,6 +373,7 @@ pig.Canvas = function(x, y, w, h) {
 
 	this.draw = function() {
 		pig.context.save() ;
+		pig.context.globalAlpha = this.alpha ;
 
 		if(this.ignoreCamera)
 			pig.context.translate(this.x, this.y) ;
