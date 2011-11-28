@@ -364,6 +364,7 @@ pig.Canvas = function(x, y, w, h) {
 	this.y = y ;
 	this.w = w ;
 	this.h = h  ;
+	this.alpha = 1 ;
 
 	this.canvas = document.createElement('canvas') ;
 	this.canvas.width = w ;
@@ -372,6 +373,7 @@ pig.Canvas = function(x, y, w, h) {
 
 	this.draw = function() {
 		pig.context.save() ;
+		pig.context.globalAlpha = this.alpha ;
 
 		if(this.ignoreCamera)
 			pig.context.translate(this.x, this.y) ;
@@ -514,25 +516,22 @@ pig.Tilemap = function(x, y, image, tw, th, gw, gh) {
 	this.tileH = th ;
 
 	this.image = pig.loadImage(image) ;
+	this.canvas = null ;
 
-	this.tiles = [] ;
-	for(var y = 0; y < gh; ++y) {
-		for(var x = 0; x < gw; ++x) {
-			this.tiles.push(0) ;
-		}
-	}
+	this.build = function() {
+		this.canvas = new pig.Canvas(x, y, tw*gw, th*gh) ;
+		this.canvas = pig.Canvas.createRect(0, 0, tw*gw, th*gh, 'white') ;
 
-	this.draw = function() {
-		for(var y = 0; y < this.gridH; ++y) {
-			for(var x = 0; x < this.gridW; ++x) {
-				var tileX = this.tile(x, y) * this.tileW ;
-				var tileY = 0 ;
-
-				var destX = x * this.tileW + this.x + pig.camera.x ;
-				var destY = y * this.tileH + this.y + pig.camera.y ;
-				pig.context.drawImage(this.image, tileX, tileY, this.tileW, this.tileH, destX, destY, this.tileW, this.tileH) ;
+		for(var y = 0; y < gh; ++y) {
+			for(var x = 0; x < gw; ++x) {
+				this.setTile(x, y, this.tile(x, y)) ;
 			}
 		}
+	};
+
+	this.draw = function() {
+		if(this.canvas)
+			this.canvas.draw() ;
 	} ;
 
 	this.tile = function(tx, ty) {
@@ -545,7 +544,31 @@ pig.Tilemap = function(x, y, image, tw, th, gw, gh) {
 		if(tx < 0 || ty < 0 || tx >= this.gridW || ty >= this.gridH)
 			return ;
 		this.tiles[ty * this.gridW + tx] = tile ;
+
+		if(this.canvas) {
+			var sourceX = tile * this.tileW ;
+			var sourceY = 0 ;
+
+			var destX = tx * this.tileW ;
+			var destY = ty * this.tileH ;
+
+			this.canvas.context.clearRect(destX, destY, this.tileW, this.tileH) ;
+			this.canvas.context.drawImage(this.image, sourceX, sourceY, this.tileW, this.tileH, destX, destY, this.tileW, this.tileH) ;
+		}
 	} ;
+
+	this.tiles = [] ;
+	for(var y = 0; y < gh; ++y) {
+		for(var x = 0; x < gw; ++x) {
+			this.tiles.push(0) ;
+		}
+	}
+
+	this.update = function(dtime) {
+		if(!this.canvas && this.image.valid) {
+			this.build() ;
+		}
+	};
 }
 
 pig.Text = function(x, y, text, font, colour, size) {
