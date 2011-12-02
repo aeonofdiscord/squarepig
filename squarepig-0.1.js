@@ -7,6 +7,7 @@ pig = {
 	mouse: {x: undefined, y: undefined, pressed: false},
 	offset: [0, 0],
 	fps: 60,
+	audioChannels: []
 }
 
 pig.init = function(canvas) {
@@ -49,10 +50,19 @@ pig.loadImage = function(url) {
 } ;
 
 pig.loadAudio = function(url) {
-	var a = new Audio() ;
-	a.src = url ;
-	this.audio[url] = a ;
-	return a ;
+	var channel = null ;
+	for(var a = 0; a < this.audioChannels.length; ++a) {
+		channel = this.audioChannels[a] ;
+		if(channel.ended) {
+			channel.pause() ;
+			channel.currentTime = 0 ;
+			channel.src = url ;
+			return channel ;
+		}
+	}
+	channel = new Audio(url) ;
+	this.audioChannels.push(channel) ;
+	return channel ;
 } ;
 
 pig._mousePosition = function(e) {
@@ -98,6 +108,10 @@ pig.mouseOut = function(event) {
 	pig.mouse.y = undefined ;
 };
 
+pig.playSfx = function(url) {
+	new pig.Sfx(url).play() ;
+};
+
 pig.run = function() {
 	var dtime = 1000 / pig.fps ;
 	pig.time = Date.now() ;
@@ -106,12 +120,12 @@ pig.run = function() {
 
 pig.update = function() {
 	var dtime = (Date.now() - pig.time) / 1000 ;
+	pig.time = Date.now() ;
 	pig.world.update(dtime) ;
 	pig.canvas.width = pig.canvas.clientWidth ;
 	pig.canvas.height = pig.canvas.clientHeight ;
 	pig.context.clearRect(0, 0, pig.canvas.width, pig.canvas.height) ;
 	pig.world.draw() ;
-	pig.time = Date.now() ;
 	pig.mouse.pressed = false ;
 } ;
 
@@ -148,8 +162,10 @@ pig.World = function() {
 
 	this.draw = function() {
 		this.entities.sort(function(lhs, rhs) {
-			if(!lhs.graphic || !rhs.graphic)
-				return 0 ;
+			if(!lhs.graphic)
+				return -1 ;
+			if(!rhs.graphic)
+				return 1 ;
 			if(lhs.graphic.z == rhs.graphic.z)
 				return lhs.id - rhs.id ;
 			return lhs.graphic.z - rhs.graphic.z ;
@@ -195,6 +211,7 @@ pig.World = function() {
 	} ;
 
 	this.remove = function(e) {
+		e.removed() ;
 		this.removed.push(e) ;
 	} ;
 
@@ -235,11 +252,13 @@ pig.Entity = function() {
 			this.graphic.draw() ;
 	} ;
 
-	this.mouseDown = function() {} ;
-
 	this.keyDown = function(key) {} ;
 
 	this.keyUp = function(key) {} ;
+
+	this.mouseDown = function() {} ;
+
+	this.removed = function() {} ;
 
 	this.update = function(dtime) {} ;
 }
@@ -322,9 +341,12 @@ pig.Graphiclist = function(graphics) {
 	this.graphics = graphics || [] ;
 
 	this.draw = function() {
+		pig.context.save() ;
+		pig.context.translate(this.x, this.y) ;
 		for(var g in this.graphics) {
 			this.graphics[g].draw() ;
 		}
+		pig.context.restore() ;
 	};
 
 	this.pop = function() {
@@ -578,17 +600,18 @@ pig.Text = function(x, y, text, font, colour, size) {
 	this.text = text ;
 	this.font = font || "sans" ;
 	this.colour = colour || "white" ;
-	this.size = size || "10pt" ;
+	this.size = size || 14 ;
 
 	pig.context.textBaseline = 'top' ;
-	pig.context.font = this.size + " " + this.font ;
+	pig.context.font = this.size + "px " + this.font ;
 	pig.context.fillStyle = this.colour ;
 	this.width = pig.context.measureText(text).width ;
+	this.height = this.size ;
 
 	this.draw = function() {
 		this.width = pig.context.measureText(this.text) ;
 		pig.context.textBaseline = 'top' ;
-		pig.context.font = this.size + " " + this.font ;
+		pig.context.font = this.size + "px " + this.font ;
 		pig.context.fillStyle = this.colour ;
 		pig.context.fillText(this.text, this.x, this.y) ;
 	};
