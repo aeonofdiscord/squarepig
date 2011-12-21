@@ -170,14 +170,14 @@ pig.World = function() {
 				return lhs.id - rhs.id ;
 			return lhs.graphic.z - rhs.graphic.z ;
 		}) ;
-		for(var e in this.entities) {
+		for(var e = 0 ; e < this.entities.length; ++e) {
 			this.entities[e].draw() ;
 		}
 	} ;
 
 	this.filter = function(f) {
 		l = [] ;
-		for(var e in this.entities) {
+		for(var e = 0; e < this.entities.length; ++e) {
 			if(f(this.entities[e])) {
 				l.push(this.entities[e]) ;
 			}
@@ -216,13 +216,13 @@ pig.World = function() {
 	} ;
 
 	this._update = function(dtime) {
-		for(var e in this.entities) {
+		for(var e = 0; e < this.entities.length; ++e) {
 			if(this.entities[e].graphic)
 				this.entities[e].graphic.update(dtime) ;
 			this.entities[e].update(dtime) ;
 		}
-		for(var r in this.removed) {
-			for(var e in this.entities) {
+		for(var r = 0; r < this.removed.length; ++r) {
+			for(var e = 0; e < this.entities.length; ++e) {
 				if(this.entities[e] == this.removed[r])
 					this.entities.splice(e, 1) ;
 			}
@@ -343,7 +343,7 @@ pig.Graphiclist = function(graphics) {
 	this.draw = function() {
 		pig.context.save() ;
 		pig.context.translate(this.x, this.y) ;
-		for(var g in this.graphics) {
+		for(var g = 0; g < this.graphics.length; ++g) {
 			this.graphics[g].draw() ;
 		}
 		pig.context.restore() ;
@@ -358,7 +358,7 @@ pig.Graphiclist = function(graphics) {
 	};
 
 	this.remove = function(graphic) {
-		for(var g in this.graphics) {
+		for(var g = 0; g < this.graphics.length; ++g) {
 			if(this.graphics[g] == graphic)
 				this.graphics.slice(g) ;
 		}
@@ -373,7 +373,7 @@ pig.Graphiclist = function(graphics) {
 	};
 
 	this.update = function(dtime) {
-		for(var g in this.graphics) {
+		for(var g = 0; g < this.graphics.length; ++g) {
 			this.graphics[g].update(dtime) ;
 		}
 	};
