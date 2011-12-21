@@ -16,8 +16,6 @@
 			TILE_W = 64 ;
 			TILE_H = 32 ;
 
-			var camera = {x: (12 * TILE_W/2), y: 0} ;
-
 			function IsoTilemap(x, y, gw, gh, tw, th, image) {
 				pig.Graphic.apply(this) ;
 
@@ -43,7 +41,7 @@
 							var tileX = this.tile(x, y) * this.tileW ;
 							var tileY = 0 ;
 
-							var destX = (x-y) * this.tileW/2 + this.x + camera.x ;
+							var destX = (x-y) * this.tileW/2 + this.x + pig.camera.x ;
 							var destY = (x+y) * this.tileH/2 + this.y ;
 							pig.context.drawImage(this.image, tileX, tileY, this.tileW, this.tileH, destX, destY, this.tileW, this.tileH) ;
 						}
@@ -82,8 +80,8 @@
 				this.gridX = gx ;
 				this.gridY = gy ;
 
-				this.x = (gx - gy) * TILE_W/2 + (12 * TILE_W/2) ;
-				this.y = (gx + gy) * TILE_H/2 - 8 ;
+				this.x = (gx - gy) * TILE_W/2 ;
+				this.y = (gx + gy) * TILE_H/2 - TILE_H/4 ;
 
 				this.graphic = new pig.Image(this.x, this.y, 'graphics/isometric/town.png') ;
 			}
@@ -94,7 +92,7 @@
 				this.gridX = gx ;
 				this.gridY = gy ;
 
-				this.x = (gx - gy) * TILE_W/2 + camera.x + 16 ;
+				this.x = (gx - gy) * TILE_W/2 + 16 ;
 				this.y = (gx + gy) * TILE_H/2 - 32 ;
 
 				this.image = new pig.Image(this.x, this.y, 'graphics/isometric/warchap.png') ;
@@ -107,6 +105,7 @@
 				pig.World.apply(this) ;
 				this.terrain = new Terrain() ;
 				this.add(this.terrain) ;
+				pig.camera = {x: (12 * TILE_W/2), y: 0} ;
 			}
 
 			function City(gx, gy) {
@@ -118,7 +117,7 @@
 				var width = 128 ;
 				var height = 80 ;
 
-				this.x = (gx - gy) * TILE_W/2 + camera.x - width/2 + TILE_W/2 ;
+				this.x = (gx - gy) * TILE_W/2 - width/2 + TILE_W/2 ;
 				this.y = (gx + gy) * TILE_H/2 - height + TILE_H*2 ;
 
 				this.image = new pig.Image(this.x, this.y, 'graphics/isometric/city.png') ;
