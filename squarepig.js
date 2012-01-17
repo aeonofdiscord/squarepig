@@ -10,7 +10,8 @@ pig = {
 	audioChannels: []
 }
 
-pig.init = function(canvas) {
+pig.init = function(canvas_id) {
+	canvas = document.getElementById(canvas_id) ;
 	this.canvas = canvas ;
 	this.context = canvas.getContext('2d'); ;
 	this.world = new pig.World() ;
@@ -118,13 +119,15 @@ pig.run = function() {
 	setInterval(pig.update, dtime) ;
 } ;
 
+pig.setBackground = function(url) {
+	pig.canvas.style.backgroundImage = 'url(' + url + ')' ;
+	pig.context.clearRect(0, 0, pig.canvas.width, pig.canvas.height) ;
+} ;
+
 pig.update = function() {
 	var dtime = (Date.now() - pig.time) / 1000 ;
 	pig.time = Date.now() ;
 	pig.world.update(dtime) ;
-	pig.canvas.width = pig.canvas.clientWidth ;
-	pig.canvas.height = pig.canvas.clientHeight ;
-	pig.context.clearRect(0, 0, pig.canvas.width, pig.canvas.height) ;
 	pig.world.draw() ;
 	pig.mouse.pressed = false ;
 } ;
@@ -241,7 +244,7 @@ pig.Entity = function() {
 
 	this.world = null ;
 
-	this.added = function() {}
+	this.added = function() {} ;
 
 	this.collide = function(rect) {
 		return false ;
@@ -268,9 +271,9 @@ pig.Graphic = function() {
 	this.y = 0 ;
 	this.z = 0 ;
 
-	this.draw = function() {}
+	this.draw = function() {} ;
 
-	this.update = function(dtime) {}
+	this.update = function(dtime) {} ;
 } ;
 
 pig.Rect = function(x, y, w, h) {
@@ -279,6 +282,8 @@ pig.Rect = function(x, y, w, h) {
 	this.y = y ;
 	this.w = w ;
 	this.h = h ;
+	
+	this.bottom = function() { return this.y + this.h ; } ;
 
 	this.collidePoint = function(point) {
 		return (
@@ -300,11 +305,17 @@ pig.Rect = function(x, y, w, h) {
 			return false ;
 		return true ;
 	} ;
+	
+	this.left = function() { return this.x ; } ;
 
 	this.place = function(pos) {
 		this.x = pos[0] ;
 		this.y = pos[1] ;
 	} ;
+		
+	this.right = function() { return this.x + this.w ; } ;
+	
+	this.top = function() { return this.y ; } ;
 }
 
 pig.Circle = function(x, y, radius) {
@@ -398,15 +409,17 @@ pig.Canvas = function(x, y, w, h) {
 		pig.context.globalAlpha = this.alpha ;
 
 		if(this.ignoreCamera)
-			pig.context.translate(this.x, this.y) ;
+			pig.context.translate(Math.floor(this.x), Math.floor(this.y)) ;
 		else
-			pig.context.translate(this.x + pig.camera.x, this.y + pig.camera.y) ;
+			pig.context.translate(Math.floor(this.x + pig.camera.x), Math.floor(this.y + pig.camera.y)) ;
 
 		pig.context.drawImage(this.canvas, 0, 0) ;
 		pig.context.restore() ;
 	};
 
-	this.update = function(dtime) {}
+	this.update = function(dtime) {
+		pig.context.clearRect(Math.floor(this.x - 1), Math.floor(this.y - 1), Math.floor(this.width + 1), Math.floor(this.width + 1)) ;
+	}
 } ;
 
 pig.Canvas.createRect = function(x, y, w, h, colour) {
@@ -434,18 +447,24 @@ pig.Image = function(x, y, image) {
 		pig.context.save() ;
 		pig.context.globalAlpha = this.alpha ;
 		if(this.ignoreCamera)
-			pig.context.translate(this.x, this.y) ;
+			pig.context.translate(Math.floor(this.x), Math.floor(this.y)) ;
 		else
-			pig.context.translate(this.x + pig.camera.x, this.y + pig.camera.y) ;
+			pig.context.translate(Math.floor(this.x + pig.camera.x), Math.floor(this.y + pig.camera.y)) ;
 		pig.context.drawImage(this.image, 0, 0) ;
 		pig.context.globalAlpha = 1 ;
 		pig.context.restore() ;
 	};
+	
+	this.place = function(pos) {
+		this.x = pos[0] ;
+		this.y = pos[1] ;
+	};
 
 	this.update = function(dtime) {
+		pig.context.clearRect(Math.floor(this.x - 1), Math.floor(this.y - 1), Math.round(this.width + 1), Math.round(this.height + 1)) ;
 		this.width = this.image.width ;
 		this.height = this.image.height ;
-	}
+	};
 };
 
 pig.Sprite = function(x, y, image, frameW, frameH) {
@@ -487,9 +506,9 @@ pig.Sprite = function(x, y, image, frameW, frameH) {
 			pig.context.globalAlpha = this.alpha ;
 
 			if(this.ignoreCamera)
-				pig.context.translate(this.x, this.y) ;
+				pig.context.translate(Math.floor(this.x), Math.floor(this.y)) ;
 			else
-				pig.context.translate(this.x + pig.camera.x, this.y + pig.camera.y) ;
+				pig.context.translate(Math.floor(this.x + pig.camera.x), Math.floor(this.y + pig.camera.y)) ;
 
 			if(this.flip) {
 				pig.context.scale(-1, 1) ;
@@ -513,7 +532,10 @@ pig.Sprite = function(x, y, image, frameW, frameH) {
 		this.time = 0 ;
 	} ;
 
-	this.update = function(dtime) {
+	this.update = function(dtime) {	
+		pig.context.clearRect(Math.floor(this.x - 1), Math.floor(this.y - 1), Math.floor(this.w + 1), Math.floor(this.h + 1)) ;
+		this.w = this.image.width ;
+		this.h = this.image.height ;
 		this.time += dtime ;
 
 		if(this.fps > 0 && this.time > 1 / this.fps) {
@@ -587,6 +609,7 @@ pig.Tilemap = function(x, y, image, tw, th, gw, gh) {
 	}
 
 	this.update = function(dtime) {
+		pig.context.clearRect(Math.floor(this.x - 1), Math.floor(this.y - 1), Math.floor(this.width + 1), Math.floor(this.width + 1)) ;
 		if(!this.canvas && this.image.valid) {
 			this.build() ;
 		}
@@ -614,6 +637,10 @@ pig.Text = function(x, y, text, font, colour, size) {
 		pig.context.font = this.size + "px " + this.font ;
 		pig.context.fillStyle = this.colour ;
 		pig.context.fillText(this.text, this.x, this.y) ;
+	};
+	
+	this.update = function() {
+		pig.context.clearRect(Math.floor(this.x - 1), Math.floor(this.y - 1), Math.floor(this.width + 1), Math.floor(this.width + 1)) ;
 	};
 } ;
 
@@ -670,4 +697,4 @@ pig.key = {
 	RIGHT: 39,
 	DOWN: 40
 };
-pig.version = 0.1 ;
+pig.version = 0.2 ;
