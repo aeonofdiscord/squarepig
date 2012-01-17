@@ -418,7 +418,7 @@ pig.Canvas = function(x, y, w, h) {
 	};
 
 	this.update = function(dtime) {
-		pig.context.clearRect(Math.floor(this.x - 1), Math.floor(this.y - 1), Math.floor(this.width + 1), Math.floor(this.width + 1)) ;
+		pig.context.clearRect(Math.floor(this.x - 1), Math.floor(this.y - 1), Math.floor(this.width + 1), Math.floor(this.height + 1)) ;
 	}
 } ;
 
@@ -609,7 +609,7 @@ pig.Tilemap = function(x, y, image, tw, th, gw, gh) {
 	}
 
 	this.update = function(dtime) {
-		pig.context.clearRect(Math.floor(this.x - 1), Math.floor(this.y - 1), Math.floor(this.width + 1), Math.floor(this.width + 1)) ;
+		pig.context.clearRect(Math.floor(this.x - 1), Math.floor(this.y - 1), Math.floor(this.width + 1), Math.floor(this.height + 1)) ;
 		if(!this.canvas && this.image.valid) {
 			this.build() ;
 		}
@@ -632,15 +632,16 @@ pig.Text = function(x, y, text, font, colour, size) {
 	this.height = this.size ;
 
 	this.draw = function() {
-		this.width = pig.context.measureText(this.text) ;
+		this.width = pig.context.measureText(this.text).width ;
 		pig.context.textBaseline = 'top' ;
 		pig.context.font = this.size + "px " + this.font ;
 		pig.context.fillStyle = this.colour ;
 		pig.context.fillText(this.text, this.x, this.y) ;
 	};
 	
-	this.update = function() {
-		pig.context.clearRect(Math.floor(this.x - 1), Math.floor(this.y - 1), Math.floor(this.width + 1), Math.floor(this.width + 1)) ;
+	this.update = function(time) {
+		pig.context.clearRect(Math.floor(this.x - 1), Math.floor(this.y - 1), Math.floor(this.width + 1), Math.floor(this.height + 1)) ;
+		
 	};
 } ;
 
