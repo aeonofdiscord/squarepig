@@ -282,7 +282,7 @@ pig.Rect = function(x, y, w, h) {
 	this.y = y ;
 	this.w = w ;
 	this.h = h ;
-	
+
 	this.bottom = function() { return this.y + this.h ; } ;
 
 	this.collidePoint = function(point) {
@@ -305,16 +305,16 @@ pig.Rect = function(x, y, w, h) {
 			return false ;
 		return true ;
 	} ;
-	
+
 	this.left = function() { return this.x ; } ;
 
 	this.place = function(pos) {
 		this.x = pos[0] ;
 		this.y = pos[1] ;
 	} ;
-		
+
 	this.right = function() { return this.x + this.w ; } ;
-	
+
 	this.top = function() { return this.y ; } ;
 }
 
@@ -432,6 +432,8 @@ pig.Canvas.createRect = function(x, y, w, h, colour) {
 pig.Image = function(x, y, image) {
 	pig.Graphic.apply(this) ;
 
+	this._x = x ;
+	this._y = y ;
 	this.x = x ;
 	this.y = y ;
 	this.alpha = 1 ;
@@ -447,21 +449,30 @@ pig.Image = function(x, y, image) {
 		pig.context.save() ;
 		pig.context.globalAlpha = this.alpha ;
 		if(this.ignoreCamera)
-			pig.context.translate(Math.floor(this.x), Math.floor(this.y)) ;
+			pig.context.translate(Math.floor(this._x), Math.floor(this._y)) ;
 		else
-			pig.context.translate(Math.floor(this.x + pig.camera.x), Math.floor(this.y + pig.camera.y)) ;
+			//pig.context.translate(Math.floor(this._x + pig.camera.x), Math.floor(this._y + pig.camera.y)) ;
+			pig.context.translate(Math.floor(this._x), Math.floor(this._y)) ;
 		pig.context.drawImage(this.image, 0, 0) ;
 		pig.context.globalAlpha = 1 ;
 		pig.context.restore() ;
 	};
-	
+
 	this.place = function(pos) {
 		this.x = pos[0] ;
 		this.y = pos[1] ;
 	};
 
 	this.update = function(dtime) {
-		pig.context.clearRect(Math.floor(this.x - 1), Math.floor(this.y - 1), Math.round(this.width + 1), Math.round(this.height + 1)) ;
+		pig.context.save() ;
+		if(this.ignoreCamera)
+			pig.context.translate(Math.floor(this._x), Math.floor(this._y)) ;
+		else
+			pig.context.translate(Math.floor(this._x + pig.camera.x), Math.floor(this._y + pig.camera.y)) ;
+		pig.context.clearRect(-1, -1, Math.round(this.width + 1), Math.round(this.height + 1)) ;
+		pig.context.restore() ;
+		this._x = this.x ;
+		this._y = this.y ;
 		this.width = this.image.width ;
 		this.height = this.image.height ;
 	};
@@ -470,6 +481,8 @@ pig.Image = function(x, y, image) {
 pig.Sprite = function(x, y, image, frameW, frameH) {
 	pig.Graphic.apply(this) ;
 
+	this._x = x ;
+	this._y = y ;
 	this.x = x ;
 	this.y = y ;
 	this.origin = [0, 0] ;
@@ -491,9 +504,6 @@ pig.Sprite = function(x, y, image, frameW, frameH) {
 
 	this.draw = function() {
 		if(this.image.valid) {
-			var px = this.x - (this.image.width/2)*(this.scale-1) ;
-			var py = this.y - (this.image.height/2)*(this.scale-1) ;
-
 			var fx = 0 ;
 			var fy = 0 ;
 			if(this.animation) {
@@ -506,9 +516,9 @@ pig.Sprite = function(x, y, image, frameW, frameH) {
 			pig.context.globalAlpha = this.alpha ;
 
 			if(this.ignoreCamera)
-				pig.context.translate(Math.floor(this.x), Math.floor(this.y)) ;
+				pig.context.translate(Math.floor(this._x), Math.floor(this._y)) ;
 			else
-				pig.context.translate(Math.floor(this.x + pig.camera.x), Math.floor(this.y + pig.camera.y)) ;
+				pig.context.translate(Math.floor(this._x + pig.camera.x), Math.floor(this._x + pig.camera.y)) ;
 
 			if(this.flip) {
 				pig.context.scale(-1, 1) ;
@@ -532,8 +542,16 @@ pig.Sprite = function(x, y, image, frameW, frameH) {
 		this.time = 0 ;
 	} ;
 
-	this.update = function(dtime) {	
-		pig.context.clearRect(Math.floor(this.x - 1), Math.floor(this.y - 1), Math.floor(this.w + 1), Math.floor(this.h + 1)) ;
+	this.update = function(dtime) {
+		pig.context.save() ;
+		if(this.ignoreCamera)
+			pig.context.translate(Math.floor(this._x), Math.floor(this._y)) ;
+		else
+			pig.context.translate(Math.floor(this._x + pig.camera.x), Math.floor(this._y + pig.camera.y)) ;
+		pig.context.clearRect(-1, -1, Math.floor(this.w + 1), Math.floor(this.h + 1)) ;
+		pig.context.restore() ;
+		this._x = this.x ;
+		this._y = this.y ;
 		this.w = this.image.width ;
 		this.h = this.image.height ;
 		this.time += dtime ;
@@ -638,10 +656,10 @@ pig.Text = function(x, y, text, font, colour, size) {
 		pig.context.fillStyle = this.colour ;
 		pig.context.fillText(this.text, this.x, this.y) ;
 	};
-	
+
 	this.update = function(time) {
 		pig.context.clearRect(Math.floor(this.x - 1), Math.floor(this.y - 1), Math.floor(this.width + 1), Math.floor(this.height + 1)) ;
-		
+
 	};
 } ;
 

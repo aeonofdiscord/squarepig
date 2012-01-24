@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>squarepig demo - Bounce</title>
+
+		<script>
+			function Ball(x, y) {
+				pig.Entity.apply(this) ;
+
+				this.x = x ;
+				this.y = y ;
+				this.dx = 200 ;
+				this.dy = 100 ;
+				this.image = new pig.Image(x, y, "graphics/ball.png") ;
+				this.graphic = this.image ;
+
+				this.update = function(time) {
+					this.x += this.dx * time ;
+					this.y += this.dy * time ;
+
+					if(this.x + this.image.width > pig.canvas.width) {
+						this.x = pig.canvas.width - this.image.width ;
+						this.dx = -this.dx ;
+					}
+					else if(this.x < 0) {
+						this.x = 0 ;
+						this.dx = -this.dx ;
+					}
+
+					if(this.y + this.image.height > pig.canvas.height) {
+						this.y = pig.canvas.height - this.image.height ;
+						this.dy = -this.dy ;
+					}
+					else if(this.y < 0) {
+						this.y = 0 ;
+						this.dy = -this.dy ;
+					}
+					this.graphic.place([this.x, this.y]) ;
+				} ;
+			}
+
+			function main() {
+				pig.init('pig-canvas') ;
+				pig.world.add(new Ball(0, 0)) ;
+				pig.run() ;
+			}
+		</script>
+	</head>
+	<body onload = "main();">
+		<canvas id = "pig-canvas" style = "width: 512px; height: 512px">
+			<p>Hang on! Your browser doesn't support the &lt;canvas&gt; tag! You should get on that.</p>
+		</canvas>
+
+		<p>Made with <a href = "https://github.com/aeonofdiscord/squarepig">squarepig</a>.</p>
+		<script type = "text/javascript" src = "../squarepig.js"></script>
+	</body>
+</html>
+
