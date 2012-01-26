@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>squarepig demo - Keys</title>
+
+		<script>
+			function Robot(x, y) {
+				pig.Entity.apply(this) ;
+
+				this.x = x ;
+				this.y = y ;
+				this.image = new pig.Image(x, y, "graphics/robot.png") ;
+				this.graphic = this.image ;
+
+				this.keyDown = function(key) {
+					switch(key) {
+						case pig.key.LEFT: this.x -= 16 ; break ;
+						case pig.key.RIGHT: this.x += 16 ; break ;
+						case pig.key.UP: this.y -= 16 ; break ;
+						case pig.key.DOWN: this.y += 16 ; break ;
+						default: break ;
+					}
+					this.graphic.place([this.x, this.y]) ;
+				} ;
+			}
+
+			function main() {
+				pig.init('pig-canvas') ;
+				pig.world.add(new Robot(240, 240)) ;
+				pig.run() ;
+			}
+		</script>
+	</head>
+	<body onload = "main();">
+		<p>Move the tiny robot with the arrow keys.</p>
+		<canvas id = "pig-canvas" style = "width: 512px; height: 512px">
+			<p>Hang on! Your browser doesn't support the &lt;canvas&gt; tag! You should get on that.</p>
+		</canvas>
+
+		<p>Made with <a href = "https://github.com/aeonofdiscord/squarepig">squarepig</a>.</p>
+		<script type = "text/javascript" src = "../squarepig.js"></script>
+	</body>
+</html>
+

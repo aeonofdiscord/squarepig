@@ -7,7 +7,8 @@ pig = {
 	mouse: {x: undefined, y: undefined, pressed: false},
 	offset: [0, 0],
 	fps: 60,
-	audioChannels: []
+	audioChannels: [],
+	keysPressed: []
 }
 
 pig.init = function(canvas_id) {
@@ -86,10 +87,14 @@ pig._canvasMouseDown = function(event) {
 } ;
 
 pig.keyDown = function(event) {
-	pig.world.keyDown(event.keyCode) ;
+	if(!pig.keysPressed[event.keyCode]) {
+		pig.keysPressed[event.keyCode] = true ;
+		pig.world.keyDown(event.keyCode) ;
+	}
 } ;
 
 pig.keyUp = function(event) {
+	pig.keysPressed[event.keyCode] = false ;
 	pig.world.keyUp(event.keyCode) ;
 } ;
 
@@ -451,8 +456,7 @@ pig.Image = function(x, y, image) {
 		if(this.ignoreCamera)
 			pig.context.translate(Math.floor(this._x), Math.floor(this._y)) ;
 		else
-			//pig.context.translate(Math.floor(this._x + pig.camera.x), Math.floor(this._y + pig.camera.y)) ;
-			pig.context.translate(Math.floor(this._x), Math.floor(this._y)) ;
+			pig.context.translate(Math.floor(this._x + pig.camera.x), Math.floor(this._y + pig.camera.y)) ;
 		pig.context.drawImage(this.image, 0, 0) ;
 		pig.context.globalAlpha = 1 ;
 		pig.context.restore() ;
@@ -469,7 +473,7 @@ pig.Image = function(x, y, image) {
 			pig.context.translate(Math.floor(this._x), Math.floor(this._y)) ;
 		else
 			pig.context.translate(Math.floor(this._x + pig.camera.x), Math.floor(this._y + pig.camera.y)) ;
-		pig.context.clearRect(-1, -1, Math.round(this.width + 1), Math.round(this.height + 1)) ;
+		pig.context.clearRect(0, 0, Math.round(this.width), Math.round(this.height)) ;
 		pig.context.restore() ;
 		this._x = this.x ;
 		this._y = this.y ;
@@ -548,7 +552,7 @@ pig.Sprite = function(x, y, image, frameW, frameH) {
 			pig.context.translate(Math.floor(this._x), Math.floor(this._y)) ;
 		else
 			pig.context.translate(Math.floor(this._x + pig.camera.x), Math.floor(this._y + pig.camera.y)) ;
-		pig.context.clearRect(-1, -1, Math.floor(this.w + 1), Math.floor(this.h + 1)) ;
+		pig.context.clearRect(0, 0, Math.floor(this.w), Math.floor(this.h)) ;
 		pig.context.restore() ;
 		this._x = this.x ;
 		this._y = this.y ;
