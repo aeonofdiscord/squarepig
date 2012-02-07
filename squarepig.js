@@ -522,7 +522,7 @@ pig.Sprite = function(x, y, image, frameW, frameH) {
 			if(this.ignoreCamera)
 				pig.context.translate(Math.floor(this._x), Math.floor(this._y)) ;
 			else
-				pig.context.translate(Math.floor(this._x + pig.camera.x), Math.floor(this._x + pig.camera.y)) ;
+				pig.context.translate(Math.floor(this._x + pig.camera.x), Math.floor(this._y + pig.camera.y)) ;
 
 			if(this.flip) {
 				pig.context.scale(-1, 1) ;
