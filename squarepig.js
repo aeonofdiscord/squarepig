@@ -8,13 +8,14 @@ pig = {
 	offset: [0, 0],
 	fps: 60,
 	audioChannels: [],
-	keysPressed: []
+	keysPressed: [],
+	maxFrameTime: 0.030,
 }
 
 pig.init = function(canvas_id) {
 	canvas = document.getElementById(canvas_id) ;
 	this.canvas = canvas ;
-	this.context = canvas.getContext('2d'); ;
+	this.context = canvas.getContext('2d'); 
 	this.world = new pig.World() ;
 	this.canvas.onmousedown = pig._canvasMouseDown ;
 	document.onkeydown = pig.keyDown ;
@@ -129,13 +130,24 @@ pig.setBackground = function(url) {
 	pig.context.clearRect(0, 0, pig.canvas.width, pig.canvas.height) ;
 } ;
 
+pig.setWorld = function(world) {
+	pig._nextWorld = world;
+};
+
 pig.update = function() {
 	var dtime = (Date.now() - pig.time) / 1000 ;
-	pig.time = Date.now() ;
-	pig.world.update(dtime) ;
-	pig.world.draw() ;
-	pig.mouse.pressed = false ;
-} ;
+	if(dtime > pig.maxFrameTime)
+		dtime = pig.maxFrameTime;
+	pig.time = Date.now();
+	pig.world.update(dtime);
+	pig.context.clearRect(0, 0, pig.canvas.width, pig.canvas.height);
+	pig.world.draw();
+	pig.mouse.pressed = false;
+	if(pig._nextWorld) {
+		pig.world = pig._nextWorld;
+		pig._nextWorld = null;
+	}
+};
 
 pig.Object = function() {
 	this.clone = function() {
@@ -152,7 +164,12 @@ pig.Object = function() {
 		}
 		return o ;
 	} ;
-}
+} ;
+
+pig.Collision = function(other, rect) {
+	this.other = other;
+	this.rect = rect;
+} ;
 
 pig.World = function() {
 	pig.Object.apply(this) ;
@@ -184,7 +201,7 @@ pig.World = function() {
 	} ;
 
 	this.filter = function(f) {
-		l = [] ;
+		var l = [] ;
 		for(var e = 0; e < this.entities.length; ++e) {
 			if(f(this.entities[e])) {
 				l.push(this.entities[e]) ;
@@ -239,6 +256,23 @@ pig.World = function() {
 	} ;
 
 	this.update = function(dtime) { this._update(dtime) ; } ;
+
+	this.collide = function(rect)  {
+
+		var collisions = Array();
+
+		for (var i = 0; i < this.entities.length; i++)
+		{
+			var e = this.entities[i];
+			if (e.graphic == null)
+				continue;
+			var entRect = new pig.Rect(e.graphic.x,e.graphic.y,e.graphic.w,e.graphic.h);
+			if (rect.collideRect(entRect))
+				collisions.push(new pig.Collision(e,entRect));
+		}
+
+		return collisions;
+	} ;
 }
 
 pig.Entity = function() {
@@ -256,7 +290,7 @@ pig.Entity = function() {
 	} ;
 
 	this.draw = function() {
-		if(this.graphic)
+		if(this.graphic && this.graphic.visible != false)
 			this.graphic.draw() ;
 	} ;
 
@@ -275,6 +309,7 @@ pig.Graphic = function() {
 	this.x = 0 ;
 	this.y = 0 ;
 	this.z = 0 ;
+	this.visible = true;
 
 	this.draw = function() {} ;
 
@@ -310,6 +345,10 @@ pig.Rect = function(x, y, w, h) {
 			return false ;
 		return true ;
 	} ;
+	
+	this.intersects = function(rect) {
+		return this.collideRect(rect);
+	};
 
 	this.left = function() { return this.x ; } ;
 
@@ -501,6 +540,7 @@ pig.Sprite = function(x, y, image, frameW, frameH) {
 	this.frameHeight = frameH ;
 	this.flip = false ;
 	this.alpha = 1 ;
+	this.angle = 0;
 
 	this.add = function(animation, frames) {
 		this.animations[animation] = frames ;
@@ -510,6 +550,8 @@ pig.Sprite = function(x, y, image, frameW, frameH) {
 		if(this.image.valid) {
 			var fx = 0 ;
 			var fy = 0 ;
+			var ox = 0 ;
+			var oy = 0 ;
 			if(this.animation) {
 				var frame = this.animation[this.frame] ;
 				var rowLength = Math.floor(this.image.width / this.frameWidth) ;
@@ -517,18 +559,26 @@ pig.Sprite = function(x, y, image, frameW, frameH) {
 				fy = Math.floor(frame / rowLength) * this.frameHeight ;
 			}
 			pig.context.save() ;
-			pig.context.globalAlpha = this.alpha ;
-
+			pig.context.globalAlpha = this.alpha ;			
+		
+			this._x = this.x; this._y = this.y;
 			if(this.ignoreCamera)
 				pig.context.translate(Math.floor(this._x), Math.floor(this._y)) ;
 			else
 				pig.context.translate(Math.floor(this._x + pig.camera.x), Math.floor(this._y + pig.camera.y)) ;
-
+			
+			var midPointX =  this.w*0.5;
+			var midPointY =  this.h*0.5;				
+				
+			pig.context.translate(midPointX, midPointY);
+			pig.context.rotate(this.angle);
+			pig.context.translate(-midPointX, -midPointY);
+			
 			if(this.flip) {
 				pig.context.scale(-1, 1) ;
 				pig.context.translate(-this.frameWidth, 0) ;
 			}
-			pig.context.drawImage(this.image, fx, fy, this.frameWidth, this.frameHeight, 0, 0, Math.floor(this.frameWidth * this.scale), Math.floor(this.frameHeight * this.scale)) ;
+			pig.context.drawImage(this.image, fx, fy, this.frameWidth, this.frameHeight, ox, oy, Math.floor(this.frameWidth * this.scale), Math.floor(this.frameHeight * this.scale)) ;
 			pig.context.globalAlpha = 1 ;
 			pig.context.restore() ;
 		}
@@ -539,12 +589,16 @@ pig.Sprite = function(x, y, image, frameW, frameH) {
 		this.y = pos[1] ;
 	} ;
 
-	this.play = function(animation, fps) {
+	this.play = function(animation, fps, loop) {
 		this.animation = this.animations[animation] ;
-		this.fps = fps ;
-		this.frame = 0 ;
-		this.time = 0 ;
-	} ;
+		this.playing = animation;
+		this.fps = fps;
+		this.frame = 0;
+		this.time = 0;
+		this.loop = loop;
+		if(loop == undefined)
+			this.loop = true;
+	};
 
 	this.update = function(dtime) {
 		pig.context.save() ;
@@ -556,8 +610,8 @@ pig.Sprite = function(x, y, image, frameW, frameH) {
 		pig.context.restore() ;
 		this._x = this.x ;
 		this._y = this.y ;
-		this.w = this.image.width ;
-		this.h = this.image.height ;
+		this.w = this.frameWidth;
+		this.h = this.frameHeight;
 		this.time += dtime ;
 
 		if(this.fps > 0 && this.time > 1 / this.fps) {
@@ -565,7 +619,10 @@ pig.Sprite = function(x, y, image, frameW, frameH) {
 			while(this.time > 1 / this.fps)
 				this.time -= 1 / this.fps ;
 			if(this.frame >= this.animation.length) {
-				this.frame -= this.animation.length ;
+				if(this.loop)
+					this.frame -= this.animation.length;
+				else
+					this.frame = this.animation.length-1;
 			}
 		}
 	} ;
@@ -585,8 +642,8 @@ pig.Tilemap = function(x, y, image, tw, th, gw, gh) {
 	this.canvas = null ;
 
 	this.build = function() {
-		this.canvas = new pig.Canvas(x, y, tw*gw, th*gh) ;
-		this.canvas = pig.Canvas.createRect(0, 0, tw*gw, th*gh, 'white') ;
+		this.canvas = new pig.Canvas(this.x, this.y, tw*gw, th*gh) ;
+		//this.canvas = pig.Canvas.createRect(0, 0, tw*gw, th*gh, 'white') ;
 
 		for(var y = 0; y < gh; ++y) {
 			for(var x = 0; x < gw; ++x) {
@@ -608,20 +665,25 @@ pig.Tilemap = function(x, y, image, tw, th, gw, gh) {
 
 	this.setTile = function(tx, ty, tile) {
 		if(tx < 0 || ty < 0 || tx >= this.gridW || ty >= this.gridH)
-			return ;
-		this.tiles[ty * this.gridW + tx] = tile ;
+			return;
+		this.tiles[ty * this.gridW + tx] = tile;
+		
+		var sheetW = Math.floor(this.image.width / this.tileW);
+		var sheetH = Math.floor(this.image.height / this.tileH);
+		var col = (tile-1) % (sheetW);
+		var row = Math.floor((tile-1) / sheetW);
 
 		if(this.canvas) {
-			var sourceX = tile * this.tileW ;
-			var sourceY = 0 ;
+			var sourceX = col * this.tileW;
+			var sourceY = row * this.tileH;
 
-			var destX = tx * this.tileW ;
-			var destY = ty * this.tileH ;
+			var destX = tx * this.tileW;
+			var destY = ty * this.tileH;
 
-			this.canvas.context.clearRect(destX, destY, this.tileW, this.tileH) ;
-			this.canvas.context.drawImage(this.image, sourceX, sourceY, this.tileW, this.tileH, destX, destY, this.tileW, this.tileH) ;
+			this.canvas.context.clearRect(destX, destY, this.tileW, this.tileH);
+			this.canvas.context.drawImage(this.image, sourceX, sourceY, this.tileW, this.tileH, destX, destY, this.tileW, this.tileH);
 		}
-	} ;
+	};
 
 	this.tiles = [] ;
 	for(var y = 0; y < gh; ++y) {
@@ -718,6 +780,8 @@ pig.key = {
 	LEFT: 37,
 	UP: 38,
 	RIGHT: 39,
-	DOWN: 40
+	DOWN: 40,
+	
+	SPACE: 32
 };
 pig.version = 0.2 ;
