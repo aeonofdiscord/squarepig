@@ -411,6 +411,21 @@ pig.Graphiclist = function(graphics) {
 	this.push = function(graphic) {
 		this.graphics.push(graphic) ;
 	};
+	
+	this.move = function(dx, dy) {
+		this.x += dx;
+		this.y += dy;
+		for(i=0;i<this.graphics.length;++i) {
+			this.graphics[i].x += dx;
+			this.graphics[i].y += dy;
+		}
+	};
+	
+	this.place = function(pos) {
+		var dx = pos[0]-this.x;
+		var dy = pos[1]-this.y;
+		this.move(dx, dy);
+	};
 
 	this.remove = function(graphic) {
 		for(var g = 0; g < this.graphics.length; ++g) {
